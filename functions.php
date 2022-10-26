@@ -2176,7 +2176,11 @@ function get_collection_product_shortcode_init( $atts ) {
 	$big = 999999999;
 	$paged = get_query_var( 'paged' ) ? get_query_var( 'paged' ) : 1;
 	
+	// categories by slug
 	$cats = explode(",", $category);
+	if( isset($_GET["cat_term"]) ) {
+		$cats = explode(",", $_GET["cat_term"]);
+	}
 
 	$query = new WC_Product_Query(array(
 		'limit' => 15,
@@ -2193,22 +2197,42 @@ function get_collection_product_shortcode_init( $atts ) {
 	//print_r($results);
 	
 	if ( !empty($products) ) {
+		echo '<ul class="searched-products">';
 		foreach ($products as $product) {
 			$product_id = $product->get_id();
-			echo '<li><a href="'.get_permalink($product_id).'">' . get_the_title($product_id) . ': '.$product->get_price_html().'</a></li>';
-			
-			if( ! $product->is_type('variable') ){
-				echo '<div class="src-pr-btns"><a href="'.$product->add_to_cart_url().'" value="'.esc_attr( $product->get_id() ).'" class="ajax_add_to_cart add_to_cart_button" data-product_id="'.get_the_ID().'" aria-label="Add “'.the_title_attribute("echo=0").'” to your cart">Add to Wish List</a></div>';
-			} else {
-				$min_price = $product->get_variation_price( 'min' );
-				$max_price = $product->get_variation_price( 'max' );
-				$cr_symbol = get_woocommerce_currency_symbol();
+			?>
+			<li class="searched-post">
+				<?php $featured_img_url = get_the_post_thumbnail_url($product_id, 'medium'); ?>
+				<a href="<?php echo get_permalink($product_id); ?>" class="sp-thumbnail-link">
+					<div class="product-ft-image">
+						<?php if ( has_post_thumbnail( $product_id ) ) { ?>
+						<img src="<?php echo $featured_img_url; ?>" alt="<?php echo get_the_title($product_id); ?>" />
+						<?php } else { ?>
+						<img src="/wp-content/uploads/woocommerce-placeholder-300x300.png" alt="<?php echo get_the_title($product_id); ?>" />
+						<?php } ?>
+					</div>
+				</a>
+				<h3 class="product-title">
+					<a href="<?php echo get_permalink($product_id); ?>"><?php echo get_the_title($product_id); ?></a>
+				</h3>
+				<?php
+					if( ! $product->is_type('variable') ){
+						echo $product->get_price_html();
+						echo '<div class="src-pr-btns"><a href="'.$product->add_to_cart_url().'" value="'.esc_attr( $product_id ).'" class="ajax_add_to_cart add_to_cart_button" data-product_id="'.$product_id.'">Add to Wish List</a></div>';
+					} else {
+						$min_price = $product->get_variation_price( 'min' );
+						$max_price = $product->get_variation_price( 'max' );
+						$cr_symbol = get_woocommerce_currency_symbol();
 
-				$variable_price = $cr_symbol.$min_price." - ".$cr_symbol.$max_price;
-				echo $variable_price;
-				echo '<div class="src-pr-btns"><a href="'.get_permalink($product_id).'">Add to Wish List</a></div>';
-			}
+						$variable_price = $cr_symbol.$min_price." - ".$cr_symbol.$max_price;
+						echo $variable_price;
+						echo '<div class="src-pr-btns"><a href="'.get_permalink($product_id).'">Add to Wish List</a></div>';
+					}
+				?>
+			</li>
+			<?php
 		}
+		echo '</div>';
 		
 		echo paginate_links( array(
                             'base' => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
